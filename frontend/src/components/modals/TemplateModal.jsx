@@ -26,8 +26,8 @@ export default function TemplateModal() {
   const currentColor = resumeData.themeColor || '#00685f';
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-content template-modal animate-fade-in">
+    <div className="modal-backdrop" onClick={() => setIsTemplateModalOpen(false)}>
+      <div className="modal-content template-modal animate-fade-in" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>
             <h2>Choose Resume Template</h2>

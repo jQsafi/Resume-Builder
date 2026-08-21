@@ -88,8 +88,8 @@ export default function ExportModal() {
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-content export-modal animate-fade-in">
+    <div className="modal-backdrop" onClick={() => setIsExportModalOpen(false)}>
+      <div className="modal-content export-modal animate-fade-in" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div>
             <h2>Export & Download Resume</h2>

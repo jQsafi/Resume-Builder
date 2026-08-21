@@ -50,6 +50,17 @@ export default function AuthModal() {
     return () => clearInterval(timer);
   }, [step, countdown]);
 
+  // Keyboard Escape listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isAuthModalOpen) {
+        setIsAuthModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAuthModalOpen, setIsAuthModalOpen]);
+
   if (!isAuthModalOpen) return null;
 
   // Step 1: Request OTP
@@ -79,23 +90,21 @@ export default function AuthModal() {
     }
   };
 
-  // Step 2: Handle Digit Input & Auto-tabbing
+  // Step 2: Handle 6-digit OTP Inputs
   const handleDigitChange = (index, value) => {
-    const val = value.slice(-1); // Only take last typed character
-    if (!/^\d*$/.test(val)) return; // Only numbers allowed
+    if (!/^\d*$/.test(value)) return;
 
     const newDigits = [...otpDigits];
-    newDigits[index] = val;
+    newDigits[index] = value.slice(-1);
     setOtpDigits(newDigits);
 
-    // Auto advance to next input
-    if (val && index < 5) {
+    if (value && index < 5) {
       digitRefs[index + 1].current?.focus();
     }
 
-    // If all 6 filled, auto submit
-    if (val && index === 5 && newDigits.every(d => d !== '')) {
-      handleVerify(newDigits.join(''));
+    const fullCode = newDigits.join('');
+    if (fullCode.length === 6 && !newDigits.includes('')) {
+      handleVerifyOtp(fullCode);
     }
   };
 
@@ -107,17 +116,18 @@ export default function AuthModal() {
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').trim();
-    if (/^\d{6}$/.test(pastedData)) {
-      const digits = pastedData.split('');
+    const pasteData = e.clipboardData.getData('text').trim();
+    if (/^\d{6}$/.test(pasteData)) {
+      const digits = pasteData.split('');
       setOtpDigits(digits);
-      handleVerify(pastedData);
+      digitRefs[5].current?.focus();
+      handleVerifyOtp(pasteData);
     }
   };
 
-  // Step 2: Verify OTP and Login
-  const handleVerify = async (submittedOtp) => {
-    const code = submittedOtp || otpDigits.join('');
+  // Step 2: Verify OTP
+  const handleVerifyOtp = async (codeToVerify) => {
+    const code = codeToVerify || otpDigits.join('');
     if (code.length !== 6) {
       setErrorMessage('Please enter all 6 digits.');
       return;
@@ -126,16 +136,16 @@ export default function AuthModal() {
     try {
       setIsLoading(true);
       setErrorMessage('');
-      const res = await verifyOtp(email.trim(), code, name);
+      const res = await verifyOtp(email.trim(), code, name.trim());
       loginWithToken(res.token, res.user);
     } catch (err) {
-      setErrorMessage(err.message || 'Invalid or expired code.');
+      setErrorMessage(err.message || 'Invalid or expired verification code.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Quick 1-Click Demo
+  // 1-Click Demo Login
   const handleQuickDemo = async () => {
     setEmail('shafayat.masum@example.com');
     setName('Shafayat Hossain Masum');
@@ -152,8 +162,8 @@ export default function AuthModal() {
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-content auth-modal animate-fade-in">
+    <div className="modal-backdrop" onClick={() => setIsAuthModalOpen(false)}>
+      <div className="modal-content auth-modal animate-fade-in" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="flex-center gap-2">
             <div className="auth-icon-badge">
