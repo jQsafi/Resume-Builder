@@ -9,7 +9,6 @@ export default function AuthModal() {
   // Step state: 1 = Email Input, 2 = OTP Verification
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [devOtpHint, setDevOtpHint] = useState('');
   
@@ -31,7 +30,6 @@ export default function AuthModal() {
     if (isAuthModalOpen) {
       setStep(1);
       setEmail('shafayat.masum@example.com');
-      setName('Shafayat Hossain Masum');
       setOtpDigits(['', '', '', '', '', '']);
       setDevOtpHint('');
       setErrorMessage('');
@@ -136,7 +134,7 @@ export default function AuthModal() {
     try {
       setIsLoading(true);
       setErrorMessage('');
-      const res = await verifyOtp(email.trim(), code, name.trim());
+      const res = await verifyOtp(email.trim(), code);
       loginWithToken(res.token, res.user);
     } catch (err) {
       setErrorMessage(err.message || 'Invalid or expired verification code.');
@@ -148,11 +146,10 @@ export default function AuthModal() {
   // 1-Click Demo Login
   const handleQuickDemo = async () => {
     setEmail('shafayat.masum@example.com');
-    setName('Shafayat Hossain Masum');
     try {
       setIsLoading(true);
       setErrorMessage('');
-      const res = await verifyOtp('shafayat.masum@example.com', '123456', 'Shafayat Hossain Masum');
+      const res = await verifyOtp('shafayat.masum@example.com', '123456');
       loginWithToken(res.token, res.user);
     } catch (err) {
       setErrorMessage(err.message);
@@ -198,18 +195,7 @@ export default function AuthModal() {
         {step === 1 && (
           <form onSubmit={handleSendOtp} className="auth-form-body">
             <div className="form-group">
-              <label className="form-label">Full Name (Optional)</label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="e.g. Shafayat Hossain Masum"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Work or Personal Email *</label>
+              <label className="form-label">Work or Personal Email</label>
               <div className="input-with-icon">
                 <Mail size={16} className="input-icon" />
                 <input
