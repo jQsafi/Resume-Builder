@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import re
 from typing import Optional
 from app.core.security import generate_otp, verify_otp_code, create_access_token, verify_access_token
+from app.services.user_service import create_or_authenticate_user, complete_user_tutorial, get_user_by_email
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -23,6 +24,7 @@ class AuthResponse(BaseModel):
     token: str
     token_type: str = "Bearer"
     user: dict
+    is_new_user: bool = False
 
 @router.post("/send-otp", response_model=SendOtpResponse)
 async def send_otp(payload: SendOtpRequest):
@@ -41,7 +43,7 @@ async def send_otp(payload: SendOtpRequest):
 @router.post("/verify-otp", response_model=AuthResponse)
 async def verify_otp(payload: VerifyOtpRequest):
     """
-    Verifies the 6-digit OTP and issues a signed JWT access token.
+    Verifies the 6-digit OTP, checks/persists user existence, and issues a signed JWT access token.
     """
     email = payload.email.lower().strip()
     otp = payload.otp.strip()
@@ -53,16 +55,8 @@ async def verify_otp(payload: VerifyOtpRequest):
             detail="Invalid or expired verification code. Please try again."
         )
 
-    # Derive Name & Avatar
-    name = payload.name.strip() if payload.name and payload.name.strip() else email.split('@')[0].replace('.', ' ').title()
-    avatar = "".join([part[0] for part in name.split() if part])[:2].upper() or "US"
-
-    user_payload = {
-        "id": f"usr-{abs(hash(email)) % 1000000:06d}",
-        "email": email,
-        "name": name,
-        "avatar": avatar
-    }
+    # Check if user exists or create new user
+    user_payload, is_new = create_or_authenticate_user(email, payload.name or "")
 
     # Generate JWT Token
     token = create_access_token(data={"sub": email, "user": user_payload})
@@ -70,8 +64,26 @@ async def verify_otp(payload: VerifyOtpRequest):
     return {
         "token": token,
         "token_type": "Bearer",
-        "user": user_payload
+        "user": user_payload,
+        "is_new_user": is_new
     }
+
+@router.post("/tutorial-completed")
+async def tutorial_completed(authorization: Optional[str] = Header(None)):
+    """
+    Marks the onboarding tutorial as completed for the authenticated user.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication token missing")
+
+    token = authorization.split(" ")[1]
+    payload = verify_access_token(token)
+    if not payload or "sub" not in payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    email = payload["sub"]
+    success = complete_user_tutorial(email)
+    return {"success": success, "email": email}
 
 @router.get("/me")
 async def get_current_user(authorization: Optional[str] = Header(None)):
@@ -86,7 +98,12 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
     if not payload or "user" not in payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
+    email = payload["sub"]
+    db_user = get_user_by_email(email)
+    user_data = db_user if db_user else payload["user"]
+
     return {
         "authenticated": True,
-        "user": payload["user"]
+        "user": user_data
     }
+

@@ -11,7 +11,8 @@ import {
   LogOut, 
   ChevronDown, 
   User, 
-  Plus
+  Plus,
+  Compass
 } from 'lucide-react';
 
 export default function LoggedInHeader({ activePage, setActivePage }) {
@@ -20,6 +21,7 @@ export default function LoggedInHeader({ activePage, setActivePage }) {
     setZoomLevel,
     setIsExportModalOpen,
     setIsTemplateModalOpen,
+    startTutorial,
     user,
     logout,
     saveCurrentResumeToDashboard
@@ -154,6 +156,16 @@ export default function LoggedInHeader({ activePage, setActivePage }) {
                 }}
               >
                 <FolderKanban size={14} /> My Resumes Dashboard
+              </button>
+              <button
+                type="button"
+                className="dropdown-item"
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  startTutorial();
+                }}
+              >
+                <Compass size={14} /> Guided Tour & Features
               </button>
               <button
                 type="button"

@@ -53,3 +53,9 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Runtime data
+backend/data/*.json
+data/*.json
+!backend/data/.gitkeep
+

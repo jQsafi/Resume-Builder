@@ -135,7 +135,7 @@ export default function AuthModal() {
       setIsLoading(true);
       setErrorMessage('');
       const res = await verifyOtp(email.trim(), code);
-      loginWithToken(res.token, res.user);
+      loginWithToken(res.token, res.user, res.is_new_user);
     } catch (err) {
       setErrorMessage(err.message || 'Invalid or expired verification code.');
     } finally {
@@ -150,7 +150,7 @@ export default function AuthModal() {
       setIsLoading(true);
       setErrorMessage('');
       const res = await verifyOtp('shafayat.masum@example.com', '123456');
-      loginWithToken(res.token, res.user);
+      loginWithToken(res.token, res.user, res.is_new_user);
     } catch (err) {
       setErrorMessage(err.message);
     } finally {

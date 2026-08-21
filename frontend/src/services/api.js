@@ -64,6 +64,25 @@ export async function getCurrentUser(token) {
 }
 
 /**
+ * Notifies backend that user completed the onboarding tutorial
+ */
+export async function markTutorialCompletedApi(token) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/tutorial-completed`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return await response.json();
+  } catch (err) {
+    console.warn('Failed to sync tutorial completion to server', err);
+    return { success: false };
+  }
+}
+
+/**
  * Uploads a .pdf or .docx resume file and extracts structured JSON.
  */
 export async function parseResumeFile(file) {

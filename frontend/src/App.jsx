@@ -11,6 +11,7 @@ import DashboardPage from './pages/DashboardPage';
 import TemplateModal from './components/modals/TemplateModal';
 import ExportModal from './components/modals/ExportModal';
 import AuthModal from './components/modals/AuthModal';
+import TutorialModal from './components/modals/TutorialModal';
 
 function MainAppLayout() {
   const { isAuthenticated } = useResume();
@@ -44,6 +45,7 @@ function MainAppLayout() {
       <TemplateModal />
       <ExportModal />
       <AuthModal />
+      <TutorialModal />
     </div>
   );
 }

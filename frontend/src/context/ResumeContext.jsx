@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialResumeData } from '../data/initialResume';
+import { markTutorialCompletedApi } from '../services/api';
 
 const ResumeContext = createContext();
 
@@ -31,6 +32,7 @@ export function ResumeProvider({ children }) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   // Authentication & JWT State
   const [token, setToken] = useState(() => {
@@ -48,17 +50,39 @@ export function ResumeProvider({ children }) {
 
   const isAuthenticated = !!token && !!user;
 
-  const loginWithToken = (jwtToken, userPayload) => {
+  const loginWithToken = (jwtToken, userPayload, isNewUser = false) => {
     setToken(jwtToken);
     setUser(userPayload);
     localStorage.setItem('resumepro_jwt_token', jwtToken);
     localStorage.setItem('resumepro_user', JSON.stringify(userPayload));
     setIsAuthModalOpen(false);
+
+    // If new user or tutorial not completed, auto trigger onboarding tutorial
+    if (isNewUser || userPayload?.has_completed_tutorial === false) {
+      setIsTutorialOpen(true);
+    }
+  };
+
+  const completeTutorial = () => {
+    setIsTutorialOpen(false);
+    if (user) {
+      const updatedUser = { ...user, has_completed_tutorial: true };
+      setUser(updatedUser);
+      localStorage.setItem('resumepro_user', JSON.stringify(updatedUser));
+    }
+    if (token) {
+      markTutorialCompletedApi(token);
+    }
+  };
+
+  const startTutorial = () => {
+    setIsTutorialOpen(true);
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
+    setIsTutorialOpen(false);
     localStorage.removeItem('resumepro_jwt_token');
     localStorage.removeItem('resumepro_user');
   };
@@ -302,6 +326,10 @@ export function ResumeProvider({ children }) {
         setIsTemplateModalOpen,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        isTutorialOpen,
+        setIsTutorialOpen,
+        completeTutorial,
+        startTutorial,
         user,
         token,
         isAuthenticated,
