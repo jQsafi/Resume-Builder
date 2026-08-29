@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useResume } from '../../context/ResumeContext';
-import { Cloud, RefreshCw, CheckCircle2, AlertCircle, HardDrive } from 'lucide-react';
+import { Cloud, RefreshCw, CheckCircle2, AlertCircle, HardDrive, Clock } from 'lucide-react';
+import { formatTimeAgo } from '../../utils/timeAgo';
 
 export default function LoggedInFooter({ setActivePage }) {
   const { resumeData, cloudSyncStatus, lastSyncedAt, syncNow } = useResume();
+  const [, setTick] = useState(0);
+
+  // Auto-refresh relative time every 15s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   const renderSyncIndicator = () => {
     switch (cloudSyncStatus) {
@@ -50,11 +60,11 @@ export default function LoggedInFooter({ setActivePage }) {
             <span className="badge badge-teal">{resumeData.templateId || 'Technical Authority'}</span>
           </div>
           <span className="footer-dot">•</span>
-          <div className="status-item text-muted">
-            {lastSyncedAt 
-              ? `Last synced ${lastSyncedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
-              : `Last edited ${new Date(resumeData.lastModified || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-            }
+          <div className="status-item text-muted" title={new Date(resumeData.lastModified || Date.now()).toLocaleString()}>
+            <Clock size={12} />
+            <span>
+              Last edited {formatTimeAgo(resumeData.lastModified)}
+            </span>
           </div>
         </div>
 

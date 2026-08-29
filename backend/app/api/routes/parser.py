@@ -2,14 +2,15 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from app.schemas.resume_schema import ResumeSchema
 from app.utils.pdf_extractor import extract_text_from_pdf
 from app.utils.word_extractor import extract_text_from_docx
-from app.services.parser_service import parse_resume_text
+from app.services.ai_service import parse_resume_with_ai
 
 router = APIRouter(prefix="/api/parse", tags=["Parser"])
 
 @router.post("/file", response_model=ResumeSchema)
 async def parse_resume_file(file: UploadFile = File(...)):
     """
-    Parses an uploaded PDF or Word resume and returns structured JSON schema.
+    Parses an uploaded PDF or Word resume using Groq Cloud AI with fallback to heuristic parsing,
+    and returns a structured JSON resume schema.
     """
     filename = file.filename or "resume"
     extension = filename.lower().split('.')[-1]
@@ -39,6 +40,6 @@ async def parse_resume_file(file: UploadFile = File(...)):
             detail="Could not extract readable text from the document. The file may be image-based or password-protected."
         )
 
-    # Parse plain text into structured schema
-    parsed_resume = parse_resume_text(raw_text, filename=filename)
-    return parsed_resume
+    # Parse plain text into structured schema via AI
+    parsed_resume_dict = await parse_resume_with_ai(raw_text, filename=filename)
+    return parsed_resume_dict

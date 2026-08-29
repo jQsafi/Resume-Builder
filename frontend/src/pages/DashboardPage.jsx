@@ -21,8 +21,10 @@ import {
   CheckCircle2,
   FileCode,
   Cloud,
-  RefreshCw
+  RefreshCw,
+  Clock
 } from 'lucide-react';
+import { formatTimeAgo } from '../utils/timeAgo';
 
 export default function DashboardPage({ setActivePage }) {
   const {
@@ -221,8 +223,8 @@ export default function DashboardPage({ setActivePage }) {
                   <span className="badge badge-teal">{res.templateId || 'Technical'}</span>
                 </div>
 
-                <div className="resume-meta-date">
-                  <Calendar size={12} /> Last edited {new Date(res.lastModified || Date.now()).toLocaleDateString()}
+                <div className="resume-meta-date" title={new Date(res.lastModified || Date.now()).toLocaleString()}>
+                  <Clock size={12} /> Last edited {formatTimeAgo(res.lastModified)}
                 </div>
 
                 <div className="resume-card-actions">
@@ -314,13 +316,13 @@ export default function DashboardPage({ setActivePage }) {
                   )}
                 </div>
                 <div className="action-card-text">
-                  <div className="action-tag">AI Auto-Extract</div>
-                  <h3>{isUploading ? 'Parsing Document...' : 'Upload Existing Resume'}</h3>
-                  <p>Drop or select your PDF or DOCX file to extract skills, history & contact details automatically.</p>
+                  <div className="action-tag">✨ Groq AI Auto-Extract</div>
+                  <h3>{isUploading ? 'AI Analyzing Document...' : 'Upload Existing Resume'}</h3>
+                  <p>Drop or select your PDF or Word file. Groq AI extracts, structures & polishes your sections automatically.</p>
                 </div>
                 <button type="button" className="btn btn-primary btn-sm w-full mt-auto" disabled={isUploading}>
-                  {isUploading ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
-                  {isUploading ? 'Extracting with AI...' : 'Upload .PDF / .DOCX'}
+                  {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                  {isUploading ? 'Extracting with Groq AI...' : '✨ Upload & AI Parse (.PDF/.DOCX)'}
                 </button>
               </div>
 

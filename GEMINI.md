@@ -69,6 +69,12 @@
   - [x] Automatic legacy JSON migration loader (`data/users.json` -> DB).
   - [x] Environment configuration (`.env` and `.env.example`).
 
+- [x] **AI-Powered PDF & DOCX Resume Upload Parser (Groq Cloud LLM)**:
+  - [x] Full-text extraction pipeline for PDF (`pypdf`, `pdfplumber`) and DOCX (`python-docx`).
+  - [x] Intelligent Groq LLM parsing (`openai/gpt-oss-120b` with multi-model fallback) extracting contact details, classified skills matrix, chronological work history with Google XYZ bullets, education, and projects.
+  - [x] Seamless fallback to heuristic regex parser if offline or API key missing.
+  - [x] Integrated frontend upload with live `"✨ AI Extracting..."` spinners and instant form autofill.
+
 - [x] **AI-Powered Bullet Point Polisher & Executive Summary Engine (Groq Cloud LLM)**:
   - [x] High-speed Groq LLM integration (`openai/gpt-oss-120b`) with automated fallback engine.
   - [x] Google XYZ formula transformer (*"Accomplished [X] as measured by [Y] by doing [Z]"*).

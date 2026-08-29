@@ -82,8 +82,8 @@ export default function EditorPage() {
         themeColor: resumeData.themeColor || '#00685f'
       });
 
-      setParseSuccessMsg(`Extracted info from "${file.name}"!`);
-      setTimeout(() => setParseSuccessMsg(''), 4000);
+      setParseSuccessMsg(`✨ AI successfully extracted and structured "${file.name}" into recruiter-approved sections!`);
+      setTimeout(() => setParseSuccessMsg(''), 5000);
     } catch (err) {
       alert(`Parsing failed: ${err.message}`);
     } finally {
@@ -102,19 +102,19 @@ export default function EditorPage() {
       <aside className="editor-sidebar">
         {/* Quick Toolbar */}
         <div className="sidebar-top-bar">
-          <label className="upload-btn-label btn btn-outline btn-sm">
+          <label className="upload-btn-label btn btn-outline btn-sm" title="Upload an existing PDF or Word document to auto-fill your resume with AI">
             {isParsing ? (
               <>
-                <Loader2 size={13} className="animate-spin text-primary" /> Parsing with AI...
+                <Loader2 size={13} className="animate-spin text-primary" /> AI Extracting...
               </>
             ) : (
               <>
-                <Upload size={13} /> Upload PDF/Word
+                <Upload size={13} /> ✨ AI Upload (PDF/Word)
               </>
             )}
             <input 
               type="file" 
-              accept=".pdf,.docx" 
+              accept=".pdf,.docx,.doc" 
               onChange={handleFileUpload} 
               disabled={isParsing}
               style={{ display: 'none' }} 
