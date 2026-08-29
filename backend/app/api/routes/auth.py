@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel
-import re
 from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db
 from app.core.security import generate_otp, verify_otp_code, create_access_token, verify_access_token
 from app.services.user_service import create_or_authenticate_user, complete_user_tutorial, get_user_by_email
 
@@ -41,9 +42,9 @@ async def send_otp(payload: SendOtpRequest):
     }
 
 @router.post("/verify-otp", response_model=AuthResponse)
-async def verify_otp(payload: VerifyOtpRequest):
+async def verify_otp(payload: VerifyOtpRequest, db: AsyncSession = Depends(get_db)):
     """
-    Verifies the 6-digit OTP, checks/persists user existence, and issues a signed JWT access token.
+    Verifies the 6-digit OTP, checks/persists user existence in the database, and issues a signed JWT access token.
     """
     email = payload.email.lower().strip()
     otp = payload.otp.strip()
@@ -55,8 +56,8 @@ async def verify_otp(payload: VerifyOtpRequest):
             detail="Invalid or expired verification code. Please try again."
         )
 
-    # Check if user exists or create new user
-    user_payload, is_new = create_or_authenticate_user(email, payload.name or "")
+    # Check if user exists or create new user in DB
+    user_payload, is_new = await create_or_authenticate_user(db, email, payload.name or "")
 
     # Generate JWT Token
     token = create_access_token(data={"sub": email, "user": user_payload})
@@ -69,9 +70,9 @@ async def verify_otp(payload: VerifyOtpRequest):
     }
 
 @router.post("/tutorial-completed")
-async def tutorial_completed(authorization: Optional[str] = Header(None)):
+async def tutorial_completed(authorization: Optional[str] = Header(None), db: AsyncSession = Depends(get_db)):
     """
-    Marks the onboarding tutorial as completed for the authenticated user.
+    Marks the onboarding tutorial as completed for the authenticated user in the database.
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authentication token missing")
@@ -82,13 +83,13 @@ async def tutorial_completed(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     email = payload["sub"]
-    success = complete_user_tutorial(email)
+    success = await complete_user_tutorial(db, email)
     return {"success": success, "email": email}
 
 @router.get("/me")
-async def get_current_user(authorization: Optional[str] = Header(None)):
+async def get_current_user(authorization: Optional[str] = Header(None), db: AsyncSession = Depends(get_db)):
     """
-    Validates the Bearer JWT token and returns current authenticated user profile.
+    Validates the Bearer JWT token and returns current authenticated user profile from the database.
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Authentication token missing")
@@ -99,11 +100,10 @@ async def get_current_user(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     email = payload["sub"]
-    db_user = get_user_by_email(email)
+    db_user = await get_user_by_email(db, email)
     user_data = db_user if db_user else payload["user"]
 
     return {
         "authenticated": True,
         "user": user_data
     }
-

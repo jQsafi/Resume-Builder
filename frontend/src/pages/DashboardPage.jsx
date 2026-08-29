@@ -19,7 +19,9 @@ import {
   Compass, 
   Zap,
   CheckCircle2,
-  FileCode
+  FileCode,
+  Cloud,
+  RefreshCw
 } from 'lucide-react';
 
 export default function DashboardPage({ setActivePage }) {
@@ -29,7 +31,9 @@ export default function DashboardPage({ setActivePage }) {
     deleteSavedResume,
     saveCurrentResumeToDashboard,
     setIsExportModalOpen,
-    startTutorial
+    startTutorial,
+    cloudSyncStatus,
+    syncNow
   } = useResume();
 
   const [isUploading, setIsUploading] = useState(false);
@@ -158,10 +162,26 @@ export default function DashboardPage({ setActivePage }) {
           <div className="flex-center gap-2">
             <button
               type="button"
-              onClick={handleCreateNew}
-              className="btn btn-primary"
+              onClick={syncNow}
+              className={`btn btn-sm ${cloudSyncStatus === 'synced' ? 'btn-ghost text-success' : 'btn-outline'}`}
+              title="Sync with cloud database"
             >
-              <Plus size={16} /> Create New Resume
+              {cloudSyncStatus === 'syncing' ? (
+                <>
+                  <RefreshCw size={14} className="spin-fast" /> Syncing...
+                </>
+              ) : (
+                <>
+                  <Cloud size={14} /> {cloudSyncStatus === 'synced' ? 'Cloud Synced' : 'Sync Cloud'}
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateNew}
+              className="btn btn-primary btn-sm"
+            >
+              <Plus size={15} /> Create New Resume
             </button>
           </div>
         )}

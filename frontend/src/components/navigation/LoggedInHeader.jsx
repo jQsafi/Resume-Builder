@@ -12,7 +12,10 @@ import {
   ChevronDown, 
   User, 
   Plus,
-  Compass
+  Compass,
+  Cloud,
+  RefreshCw,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function LoggedInHeader({ activePage, setActivePage }) {
@@ -24,7 +27,9 @@ export default function LoggedInHeader({ activePage, setActivePage }) {
     startTutorial,
     user,
     logout,
-    saveCurrentResumeToDashboard
+    saveCurrentResumeToDashboard,
+    cloudSyncStatus,
+    syncNow
   } = useResume();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -99,6 +104,27 @@ export default function LoggedInHeader({ activePage, setActivePage }) {
                 <ZoomIn size={14} />
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={syncNow}
+              className={`btn btn-sm ${cloudSyncStatus === 'synced' ? 'btn-ghost text-success' : cloudSyncStatus === 'syncing' ? 'btn-ghost text-primary' : 'btn-outline'}`}
+              title={cloudSyncStatus === 'synced' ? 'Synced to Cloud Database' : 'Save to Cloud Database'}
+            >
+              {cloudSyncStatus === 'syncing' ? (
+                <>
+                  <RefreshCw size={13} className="spin-fast" /> Syncing...
+                </>
+              ) : cloudSyncStatus === 'synced' ? (
+                <>
+                  <CheckCircle2 size={13} /> Cloud Synced
+                </>
+              ) : (
+                <>
+                  <Cloud size={13} /> Cloud Save
+                </>
+              )}
+            </button>
 
             <button
               type="button"
@@ -350,6 +376,13 @@ export default function LoggedInHeader({ activePage, setActivePage }) {
         .dropdown-item.text-danger:hover {
           background-color: var(--color-danger-light);
           color: var(--color-danger);
+        }
+
+        .spin-fast {
+          animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+          100% { transform: rotate(360deg); }
         }
       `}} />
     </header>

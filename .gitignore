@@ -57,5 +57,9 @@ yarn-error.log*
 # Runtime data
 backend/data/*.json
 data/*.json
+backend/data/*.db
+data/*.db
+*.db
+*.sqlite3
 !backend/data/.gitkeep
 

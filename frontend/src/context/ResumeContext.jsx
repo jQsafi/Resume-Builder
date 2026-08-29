@@ -1,6 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { initialResumeData } from '../data/initialResume';
-import { markTutorialCompletedApi } from '../services/api';
+import { 
+  markTutorialCompletedApi, 
+  saveResumeToCloud, 
+  getResumesFromCloud, 
+  deleteResumeFromCloud 
+} from '../services/api';
 
 const ResumeContext = createContext();
 
@@ -28,11 +33,15 @@ export function ResumeProvider({ children }) {
   });
 
   const [activeTab, setActiveTab] = useState('personal');
-  const [zoomLevel, setZoomLevel] = useState(100); // 100% default
+  const [zoomLevel, setZoomLevel] = useState(100);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+
+  // Cloud Sync Status: 'synced' | 'syncing' | 'saved_local' | 'error'
+  const [cloudSyncStatus, setCloudSyncStatus] = useState('saved_local');
+  const [lastSyncedAt, setLastSyncedAt] = useState(null);
 
   // Authentication & JWT State
   const [token, setToken] = useState(() => {
@@ -49,6 +58,51 @@ export function ResumeProvider({ children }) {
   });
 
   const isAuthenticated = !!token && !!user;
+  const syncTimeoutRef = useRef(null);
+
+  // Helper to sync resume to backend database
+  const pushToCloud = useCallback(async (dataToSync) => {
+    if (!dataToSync) return;
+    try {
+      setCloudSyncStatus('syncing');
+      const savedDoc = await saveResumeToCloud(dataToSync);
+      setCloudSyncStatus('synced');
+      setLastSyncedAt(new Date());
+
+      // Update savedResumes list with saved version
+      setSavedResumes((prev) => {
+        const filtered = prev.filter((r) => r.id !== savedDoc.id);
+        return [savedDoc, ...filtered];
+      });
+    } catch (err) {
+      console.warn('Cloud sync error (fallback to local):', err.message);
+      setCloudSyncStatus('error');
+    }
+  }, []);
+
+  // Fetch user resumes from cloud on mount or login
+  const fetchCloudResumes = useCallback(async () => {
+    try {
+      setCloudSyncStatus('syncing');
+      const list = await getResumesFromCloud();
+      if (Array.isArray(list) && list.length > 0) {
+        setSavedResumes(list);
+        setCloudSyncStatus('synced');
+        setLastSyncedAt(new Date());
+      } else {
+        setCloudSyncStatus('synced');
+      }
+    } catch (err) {
+      console.warn('Could not fetch cloud resumes:', err.message);
+      setCloudSyncStatus('saved_local');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (token) {
+      fetchCloudResumes();
+    }
+  }, [token, fetchCloudResumes]);
 
   const loginWithToken = (jwtToken, userPayload, isNewUser = false) => {
     setToken(jwtToken);
@@ -57,7 +111,13 @@ export function ResumeProvider({ children }) {
     localStorage.setItem('resumepro_user', JSON.stringify(userPayload));
     setIsAuthModalOpen(false);
 
-    // If new user or tutorial not completed, auto trigger onboarding tutorial
+    // Trigger cloud fetch & sync current draft
+    fetchCloudResumes().then(() => {
+      if (resumeData) {
+        pushToCloud(resumeData);
+      }
+    });
+
     if (isNewUser || userPayload?.has_completed_tutorial === false) {
       setIsTutorialOpen(true);
     }
@@ -83,18 +143,36 @@ export function ResumeProvider({ children }) {
     setToken(null);
     setUser(null);
     setIsTutorialOpen(false);
+    setCloudSyncStatus('saved_local');
     localStorage.removeItem('resumepro_jwt_token');
     localStorage.removeItem('resumepro_user');
   };
 
-  // Sync current resume to localStorage on edit
+  // Local storage save & Debounced Cloud Sync
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(resumeData));
     } catch (e) {
       console.error('Could not save to localStorage', e);
     }
-  }, [resumeData]);
+
+    // Debounce cloud sync by 1200ms
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+
+    setCloudSyncStatus('saved_local');
+
+    syncTimeoutRef.current = setTimeout(() => {
+      pushToCloud(resumeData);
+    }, 1200);
+
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, [resumeData, pushToCloud]);
 
   // Sync resume list to localStorage
   useEffect(() => {
@@ -104,6 +182,11 @@ export function ResumeProvider({ children }) {
       console.error('Could not save resume list to localStorage', e);
     }
   }, [savedResumes]);
+
+  // Manual Trigger to Sync Now
+  const syncNow = () => {
+    pushToCloud(resumeData);
+  };
 
   // Update Personal Info
   const updatePersonalInfo = (field, value) => {
@@ -288,8 +371,8 @@ export function ResumeProvider({ children }) {
     setResumeData(initialResumeData);
   };
 
-  // Save as new version to Dashboard
-  const saveCurrentResumeToDashboard = (title) => {
+  // Save as new version to Dashboard and Cloud
+  const saveCurrentResumeToDashboard = async (title) => {
     const newResume = {
       ...resumeData,
       id: 'resume-' + Date.now(),
@@ -297,6 +380,7 @@ export function ResumeProvider({ children }) {
       lastModified: new Date().toISOString()
     };
     setSavedResumes((prev) => [newResume, ...prev]);
+    pushToCloud(newResume);
     return newResume;
   };
 
@@ -305,9 +389,14 @@ export function ResumeProvider({ children }) {
     setResumeData(resume);
   };
 
-  // Delete resume from dashboard
-  const deleteSavedResume = (id) => {
+  // Delete resume from dashboard and Cloud
+  const deleteSavedResume = async (id) => {
     setSavedResumes((prev) => prev.filter((r) => r.id !== id));
+    try {
+      await deleteResumeFromCloud(id);
+    } catch (e) {
+      console.warn('Could not delete from cloud:', e.message);
+    }
   };
 
   return (
@@ -316,6 +405,9 @@ export function ResumeProvider({ children }) {
         resumeData,
         setResumeData,
         savedResumes,
+        cloudSyncStatus,
+        lastSyncedAt,
+        syncNow,
         activeTab,
         setActiveTab,
         zoomLevel,

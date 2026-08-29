@@ -150,3 +150,71 @@ export async function saveResumeToCloud(resumeData) {
 
   return await response.json();
 }
+
+/**
+ * Fetch all resumes from backend database
+ */
+export async function getResumesFromCloud() {
+  const response = await fetch(`${API_BASE_URL}/api/resumes`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to load resumes from cloud');
+  }
+
+  return await response.json();
+}
+
+/**
+ * Delete a resume from backend database
+ */
+export async function deleteResumeFromCloud(id) {
+  const response = await fetch(`${API_BASE_URL}/api/resumes/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete resume from cloud');
+  }
+
+  return await response.json();
+}
+
+/**
+ * Polishes a resume bullet point using Groq Llama 3.3 70B AI Engine
+ */
+export async function polishBulletPointApi(bullet, role = '', company = '', tone = 'google_xyz') {
+  const response = await fetch(`${API_BASE_URL}/api/ai/polish-bullet`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ bullet, role, company, tone })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to polish bullet point');
+  }
+
+  return await response.json();
+}
+
+/**
+ * Generates an executive summary using Groq Llama 3.3 70B AI Engine
+ */
+export async function suggestSummaryAiApi(role = '', skills = [], yearsExp = '5+') {
+  const response = await fetch(`${API_BASE_URL}/api/ai/suggest-summary`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ role, skills, years_exp: yearsExp })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to generate summary');
+  }
+
+  return await response.json();
+}

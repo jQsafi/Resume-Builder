@@ -62,18 +62,27 @@
   - [x] Integrated *"Upload PDF/Word"* button in editor with loading spinners and real-time form autofill.
   - [x] Integrated *"Download .DOCX"* button in export modal streaming backend-generated Word files.
 
+- [x] **PostgreSQL & SQLAlchemy Database Persistence Engine**:
+  - [x] Async SQLAlchemy 2.0 engine with PostgreSQL (`asyncpg`) and SQLite (`aiosqlite`) support.
+  - [x] ORM Models for `UserModel` and `ResumeModel` with automated table creation on startup.
+  - [x] Persistent user accounts, JWT sessions, and full resume document CRUD via async database sessions.
+  - [x] Automatic legacy JSON migration loader (`data/users.json` -> DB).
+  - [x] Environment configuration (`.env` and `.env.example`).
+
+- [x] **AI-Powered Bullet Point Polisher & Executive Summary Engine (Groq Cloud LLM)**:
+  - [x] High-speed Groq LLM integration (`openai/gpt-oss-120b`) with automated fallback engine.
+  - [x] Google XYZ formula transformer (*"Accomplished [X] as measured by [Y] by doing [Z]"*).
+  - [x] 3 Tailored angles per bullet (*Metrics & High Impact*, *Technical Depth*, *Engineering Leadership*).
+  - [x] Interactive `AiPolishModal.jsx` in frontend with 1-click preview and state application.
+  - [x] Executive Summary AI generator button in `SummaryForm.jsx`.
+
 ---
 
 ## 📋 TODO LIST (Upcoming Enhancements)
 
-### 🚀 Phase 3: Advanced Intelligence & Persistence
-- [ ] **AI-Powered Bullet Point Polisher**:
-  - [ ] Add an endpoint using Gemini LLM to rewrite and strengthen resume bullet points with action verbs and quantifiable metrics (XYZ formula: "Accomplished [X] as measured by [Y] by doing [Z]").
+### 🚀 Phase 3: Advanced Intelligence & Feature Enhancements
 - [ ] **Real-Time ATS Keyword Matcher**:
   - [ ] Allow users to paste a Target Job Description and calculate a live ATS Match Score (%) with suggested missing keywords.
-- [ ] **PostgreSQL Database Connection**:
-  - [ ] Connect SQLAlchemy asyncpg engine to a live PostgreSQL instance for multi-device cloud persistence.
-  - [ ] Migration scripts with Alembic.
 - [ ] **Server-Side PDF Vector Rendering**:
   - [ ] Integrate `WeasyPrint` or headless Chromium service for server-side vector PDF downloads matching browser print quality.
 - [ ] **Additional Resume Templates**:

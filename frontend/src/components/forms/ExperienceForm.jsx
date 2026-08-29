@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useResume } from '../../context/ResumeContext';
-import { Briefcase, Plus, Trash2, PlusCircle, MinusCircle } from 'lucide-react';
+import { Briefcase, Plus, Trash2, PlusCircle, MinusCircle, Sparkles } from 'lucide-react';
+import AiPolishModal from '../modals/AiPolishModal';
 
 export default function ExperienceForm() {
   const { resumeData, addExperience, updateExperience, deleteExperience } = useResume();
   const { experience = [] } = resumeData;
+
+  const [activePolishModal, setActivePolishModal] = useState(null);
 
   const handleAddHighlight = (expId, currentHighlights = []) => {
     const updated = [...currentHighlights, 'Achieved X resulting in Y measured by Z.'];
@@ -20,6 +23,29 @@ export default function ExperienceForm() {
   const handleRemoveHighlight = (expId, index, currentHighlights = []) => {
     const updated = currentHighlights.filter((_, i) => i !== index);
     updateExperience(expId, 'highlights', updated);
+  };
+
+  const handleOpenPolish = (expId, bulletIndex, bulletText, role, company) => {
+    setActivePolishModal({
+      expId,
+      bulletIndex,
+      bulletText: bulletText || 'Architected and deployed high-performance microservices.',
+      role: role || '',
+      company: company || ''
+    });
+  };
+
+  const handleApplyPolish = (polishedText) => {
+    if (activePolishModal) {
+      const exp = experience.find(e => e.id === activePolishModal.expId);
+      const currentHighlights = exp ? [...(exp.highlights || [])] : [];
+      if (activePolishModal.bulletIndex < currentHighlights.length) {
+        currentHighlights[activePolishModal.bulletIndex] = polishedText;
+      } else {
+        currentHighlights.push(polishedText);
+      }
+      updateExperience(activePolishModal.expId, 'highlights', currentHighlights);
+    }
   };
 
   return (
@@ -142,13 +168,25 @@ export default function ExperienceForm() {
               {(exp.highlights || []).map((bullet, bIdx) => (
                 <div key={bIdx} className="bullet-input-row">
                   <span className="bullet-dot">•</span>
-                  <textarea
-                    rows={2}
-                    className="form-textarea bullet-input"
-                    value={bullet}
-                    placeholder="Describe specific impact with metrics..."
-                    onChange={(e) => handleUpdateHighlight(exp.id, bIdx, e.target.value, exp.highlights)}
-                  />
+                  <div className="bullet-input-container">
+                    <textarea
+                      rows={2}
+                      className="form-textarea bullet-input"
+                      value={bullet}
+                      placeholder="Describe specific impact with metrics..."
+                      onChange={(e) => handleUpdateHighlight(exp.id, bIdx, e.target.value, exp.highlights)}
+                    />
+                    <div className="bullet-actions-bar">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenPolish(exp.id, bIdx, bullet, exp.role, exp.company)}
+                        className="btn-ai-polish"
+                        title="Polish with Groq AI (Google XYZ Formula)"
+                      >
+                        <Sparkles size={12} /> AI Polish
+                      </button>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleRemoveHighlight(exp.id, bIdx, exp.highlights)}
@@ -172,6 +210,18 @@ export default function ExperienceForm() {
           </div>
         )}
       </div>
+
+      {/* AI Polish Modal */}
+      {activePolishModal && (
+        <AiPolishModal
+          isOpen={!!activePolishModal}
+          onClose={() => setActivePolishModal(null)}
+          initialBullet={activePolishModal.bulletText}
+          role={activePolishModal.role}
+          company={activePolishModal.company}
+          onApply={handleApplyPolish}
+        />
+      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
         .items-list {
@@ -237,7 +287,7 @@ export default function ExperienceForm() {
           display: flex;
           align-items: flex-start;
           gap: 8px;
-          margin-bottom: 8px;
+          margin-bottom: 12px;
         }
 
         .bullet-dot {
@@ -246,9 +296,49 @@ export default function ExperienceForm() {
           line-height: 1.5;
         }
 
+        .bullet-input-container {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+
         .bullet-input {
           min-height: 50px;
           font-size: 0.85rem;
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+
+        .bullet-actions-bar {
+          display: flex;
+          justify-content: flex-end;
+          background: #f8fafc;
+          border: 1px solid var(--color-border);
+          border-top: none;
+          border-bottom-left-radius: var(--radius-md);
+          border-bottom-right-radius: var(--radius-md);
+          padding: 4px 8px;
+        }
+
+        .btn-ai-polish {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: linear-gradient(135deg, rgba(0, 104, 95, 0.1), rgba(0, 81, 213, 0.1));
+          border: 1px solid rgba(0, 104, 95, 0.3);
+          color: var(--color-primary);
+          font-size: 0.75rem;
+          font-weight: 600;
+          padding: 3px 8px;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .btn-ai-polish:hover {
+          background: linear-gradient(135deg, #00685f, #0051d5);
+          color: #ffffff;
+          border-color: transparent;
         }
 
         .empty-state-box {

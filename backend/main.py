@@ -1,11 +1,27 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import parser, export, resume, auth
+from app.core.database import init_db, AsyncSessionLocal
+from app.services.user_service import migrate_legacy_json_users
+from app.api.routes import parser, export, resume, auth, ai
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database tables
+    await init_db()
+    
+    # Run legacy data migration
+    async with AsyncSessionLocal() as session:
+        await migrate_legacy_json_users(session)
+        
+    yield
+    # Shutdown events if any
 
 app = FastAPI(
     title="ResumePro Backend API",
     description="High-performance backend engine for resume parsing, document export, and data management.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS Configuration
@@ -28,6 +44,7 @@ app.include_router(parser.router)
 app.include_router(export.router)
 app.include_router(resume.router)
 app.include_router(auth.router)
+app.include_router(ai.router)
 
 @app.get("/")
 async def root():
